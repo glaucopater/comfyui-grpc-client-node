@@ -1,0 +1,21 @@
+[project]
+name = "server"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Glauco Pater", email = "glauco.pater@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "grpcio>=1.76.0",
+    "grpcio-tools==1.62.0",
+    "protobuf>=4.25.3,<5",
+]
+
+[project.scripts]
+server = "server:main"
+
+[build-system]
+requires = ["uv_build>=0.9.5,<0.10.0"]
+build-backend = "uv_build"

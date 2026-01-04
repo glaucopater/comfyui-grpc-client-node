@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package echo;
+
+// A tiny echo service.
+service Echo {
+  // Unary call: send text, get text back.
+  rpc EchoOnce (EchoRequest) returns (EchoReply) {}
+  // Unary call: send JSON, get prettified JSON back.
+  rpc PrettifyJson (PrettifyJsonRequest) returns (PrettifyJsonResponse) {}
+}
+
+// Request message.
+message EchoRequest {
+  string text = 1;
+}
+
+// Response message.
+message EchoReply {
+  string text = 1;
+}
+
+// Request message for PrettifyJson.
+message PrettifyJsonRequest {
+  string json_text = 1;
+}
+
+// Response message for PrettifyJson.
+message PrettifyJsonResponse {
+  string prettified_json_text = 1;
+}
