@@ -2,15 +2,18 @@
 name = "server"
 version = "0.1.0"
 description = "Add your description here"
-readme = "README.md"
+# readme = "README.md"
 authors = [
     { name = "Glauco Pater", email = "glauco.pater@gmail.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "grpcio>=1.76.0",
-    "grpcio-tools==1.62.0",
-    "protobuf>=4.25.3,<5",
+    "grpcio>=1.69.0",
+    "grpcio-tools>=1.69.0",
+    "protobuf>=5.29.0",
+    "grpcio-reflection>=1.69.0",
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
 ]
 
 [project.scripts]

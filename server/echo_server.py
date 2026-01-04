@@ -1,41 +1,39 @@
 import json
+from datetime import datetime
 from concurrent import futures
 from pathlib import Path
 import grpc
 import echo_pb2
 import echo_pb2_grpc
+from grpc_reflection.v1alpha import reflection
 
 
 class EchoService(echo_pb2_grpc.EchoServicer):
     def EchoOnce(self, request, context):
-        print(f"Server got: {request.text!r}")
-        # Just echo back the text
-        return echo_pb2.EchoReply(text=f"Echo: {request.text}")
-
-    def PrettifyJson(self, request, context):
-        print(f"Server received PrettifyJson request.")
-        print(f"Raw json_text: {repr(request.json_text)}")
-
-        if request.json_text == '[object Object]':
-            print("Error: Received '[object Object]'. The input is not a valid JSON string.")
+        print(f"Server got: {request.message!r}")
+        if not request.message:
             context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details("Received '[object Object]'. This usually means a JavaScript object was converted to a string incorrectly. Please ensure the input is a raw JSON string.")
-            return echo_pb2.PrettifyJsonResponse()
+            context.set_details("The 'message' field is required and cannot be empty.")
+            return echo_pb2.EchoReply()
 
-        try:
-            parsed_json = json.loads(request.json_text)
-            prettified_json = json.dumps(parsed_json, indent=4)
-            return echo_pb2.PrettifyJsonResponse(prettified_json_text=prettified_json)
-        except json.JSONDecodeError as e:
-            print(f"JSONDecodeError: {e}")
-            context.set_code(grpc.StatusCode.INVALID_ARGUMENT)
-            context.set_details(f"Invalid JSON: {e}")
-            return echo_pb2.PrettifyJsonResponse()
+        # Just echo back the message with timestamp
+        return echo_pb2.EchoReply(
+            message=request.message,
+            received_at=datetime.now().isoformat()
+        )
+
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     echo_pb2_grpc.add_EchoServicer_to_server(EchoService(), server)
+
+    # Enable reflection
+    SERVICE_NAMES = (
+        echo_pb2.DESCRIPTOR.services_by_name['Echo'].full_name,
+        reflection.SERVICE_NAME,
+    )
+    reflection.enable_server_reflection(SERVICE_NAMES, server)
 
     # Read server credentials (paths resolved relative to this file)
     base_dir = Path(__file__).parent

@@ -1,4 +1,5 @@
-# ComfyUI gRPC Client Node
+# ComfyUI gRPC Client Node (v0.1.5)
+![Python Tests](https://github.com/glaucopater/comfyui-grpc-client-node/actions/workflows/test.yml/badge.svg)
 
 A gRPC-based integration for ComfyUI that enables secure communication with a simple echo service. This project is a ComfyUI custom node that includes a gRPC server.
 
@@ -29,11 +30,10 @@ This project consists of two main components:
 
 A simple gRPC server that implements an echo service. It:
 - Listens on `0.0.0.0:50051` using a secure SSL/TLS channel.
-- Accepts text messages via `EchoOnce` RPC call.
-- Accepts a JSON string via `PrettifyJson` RPC call and returns it in a prettified format.
-- Returns the text prefixed with "Echo: ".
+- Accepts a message via `EchoOnce` RPC call.
+- Returns the message.
 
-**Dependencies:**
+**Dependencies:** (managed via `pyproject.toml`)
 - grpcio >= 1.76.0
 - grpcio-tools == 1.62.0
 - protobuf >= 4.25.3, < 5
@@ -41,8 +41,38 @@ A simple gRPC server that implements an echo service. It:
 ### 2. **ComfyUI Client Node** (root directory)
 
 A set of custom nodes for ComfyUI that connect securely to the gRPC echo server.
-- **gRPC Echo**: Sends a simple text message and receives an echo.
-- **gRPC Prettify JSON**: Sends a JSON string and receives a formatted version.
+- **gRPC Echo**: Sends a message and receives an echo.
+
+## Architecture & Startup
+
+The gRPC server and ComfyUI client are integrated to start automatically.
+
+```text
+  ComfyUI Startup
+        │
+        ▼
+  Load Custom Node: comfyui-grpc-client-node
+        │
+        ├──────────────────────────┐
+        ▼                          ▼
+  __init__.py execution     Node Discovery
+        │                          │
+        ▼                          │
+  Check Port 50051                 │
+        │                          │
+  ┌─────┴─────┐                    │
+  ▼           ▼                    ▼
+[In Use]   [Available]       GRPCEchoNode Registered
+  │           │                    │
+  ▼           ▼                    │
+[Skip]   [Spawn Background]        │
+              │                    │
+              ▼                    │
+        uv run echo_server.py      │
+              │                    │
+              ▼                    ▼
+       gRPC Server Running <───> ComfyUI Workflow
+```
 
 ## Getting Started
 
@@ -66,20 +96,18 @@ A set of custom nodes for ComfyUI that connect securely to the gRPC echo server.
     openssl req -x509 -newkey rsa:4096 -keyout certs/private.key -out certs/certificate.pem -sha256 -days 365 -nodes -subj "/CN=localhost"
     ```
 
-3.  **Install Server Dependencies:**
+3.  **Install/Sync Dependencies:**
     ```bash
-    cd ../.. # Back to the custom_nodes directory
-    cd comfyui-grpc-client-node
-    pip install -r server/requirements.txt # Assuming you have a requirements.txt in the server folder
+    cd comfyui-grpc-client-node/server
+    uv sync
     ```
-    *Note: If you don't have a `requirements.txt`, you can install the dependencies manually from the `server/pyproject.toml` file.*
 
 
 ### Running the Server
 
 ```bash
 cd /path/to/ComfyUI/custom_nodes/comfyui-grpc-client-node/server
-python echo_server.py
+uv run echo_server.py
 ```
 
 The server will start listening securely on `0.0.0.0:50051`.
@@ -92,15 +120,18 @@ The server will start listening securely on `0.0.0.0:50051`.
 
 #### gRPC Echo Node
 - **host**: Server address (default: `localhost:50051`).
-- **text**: Message to send to the server.
-- **cert_path**: Absolute path to the `certificate.pem` file.
-
-#### gRPC Prettify JSON Node
-- **host**: Server address (default: `localhost:50051`).
-- **json_text**: JSON string to be prettified.
+- **message**: Message to send to the server.
 - **cert_path**: Absolute path to the `certificate.pem` file.
 
 5. Execute the workflow to receive the response.
+
+### gRPC Reflection
+
+The server now supports gRPC reflection. You can use tools like `grpcurl` or Bruno to discover services automatically without manually providing the `.proto` file:
+
+```bash
+grpcurl -insecure localhost:50051 list
+```
 
 ## API Definition
 
@@ -109,23 +140,15 @@ The service is defined in `server/echo.proto`:
 ```protobuf
 service Echo {
   rpc EchoOnce (EchoRequest) returns (EchoReply) {}
-  rpc PrettifyJson (PrettifyJsonRequest) returns (PrettifyJsonResponse) {}
 }
 
 message EchoRequest {
-  string text = 1;
+  string message = 1;
 }
 
 message EchoReply {
-  string text = 1;
-}
-
-message PrettifyJsonRequest {
-  string json_text = 1;
-}
-
-message PrettifyJsonResponse {
-  string prettified_json_text = 1;
+  string message = 1;
+  string received_at = 2;
 }
 ```
 
@@ -137,11 +160,34 @@ If you modify `echo.proto`, regenerate the Python files from within the `server`
 
 ```bash
 cd server
-python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. echo.proto
+uv run python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. echo.proto
 ```
 
+## Testing
+
+To run the unit tests:
+
+1. Ensure dependencies are installed:
+   ```bash
+   cd server
+   uv sync
+   cd ..
+   ```
+2. Run the tests from the root directory:
+   ```bash
+   uv run --project server python -m pytest tests
+   ```
+
+## Building
+
+To create a clean deployment package for ComfyUI:
+
+1. Ensure you are in the project root.
+2. Run the build script:
+   ```bash
+   python build.py
+   ```
+3. The build will be created in `build/vX.X.X/comfyui-grpc-client-node`.
+
 ## License
-
-MIT License © 2025 Glauco Pater
-
 See [LICENSE](LICENSE) for details.
