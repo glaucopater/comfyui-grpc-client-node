@@ -1,5 +1,5 @@
-# ComfyUI gRPC Client Node (v0.1.5)
-![Python Tests](https://github.com/glaucopater/comfyui-grpc-client-node/actions/workflows/test.yml/badge.svg)
+# ComfyUI gRPC Client Node (v0.1.6)
+![Python Tests](https://github.com/glaucopater/comfyui-grpc-client-node/actions/workflows/test.yml/badge.svg?branch=main)
 
 A gRPC-based integration for ComfyUI that enables secure communication with a simple echo service. This project is a ComfyUI custom node that includes a gRPC server.
 
