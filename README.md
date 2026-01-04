@@ -1,5 +1,11 @@
-# ComfyUI gRPC Client Node (v0.1.6)
+# ComfyUI gRPC Client Node (v0.2.4)
 ![Python Tests](https://github.com/glaucopater/comfyui-grpc-client-node/actions/workflows/test.yml/badge.svg?branch=main)
+
+---
+
+![gRPC Echo Node Screenshot](assets/demo.png)
+
+---
 
 A gRPC-based integration for ComfyUI that enables secure communication with a simple echo service. This project is a ComfyUI custom node that includes a gRPC server.
 
@@ -9,6 +15,8 @@ A gRPC-based integration for ComfyUI that enables secure communication with a si
 comfyui-grpc-client-node/
 ├── __init__.py               # ComfyUI custom node entry point
 ├── grpc_echo_node.py         # GRPCEchoNode implementation
+├── assets/                    # Project assets and screenshots
+│   └── node_screenshot.png
 ├── server/                    # gRPC server and related files
 │   ├── certs/                # SSL/TLS certificates
 │   │   ├── certificate.pem
@@ -19,6 +27,8 @@ comfyui-grpc-client-node/
 │   ├── echo_server.py        # Echo service server
 │   ├── pyproject.toml        # Python project configuration
 │   └── src/
+├── VERSION                    # Version metadata
+├── SUMMARY.md                 # Session summary and achievements
 └── LICENSE                    # MIT License
 ```
 
@@ -175,7 +185,7 @@ To run the unit tests:
    ```
 2. Run the tests from the root directory:
    ```bash
-   uv run --project server python -m pytest tests
+   python scripts/test.py
    ```
 
 ## Building
@@ -185,9 +195,9 @@ To create a clean deployment package for ComfyUI:
 1. Ensure you are in the project root.
 2. Run the build script:
    ```bash
-   python build.py
+   python scripts/build.py
    ```
-3. The build will be created in `build/vX.X.X/comfyui-grpc-client-node`.
+3. The build will be created in `build/v0.1.10/comfyui-grpc-client-node`.
 
 ## License
 See [LICENSE](LICENSE) for details.

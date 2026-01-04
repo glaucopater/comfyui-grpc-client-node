@@ -39,13 +39,13 @@ def test_node_call_success(mock_open, mock_path_exists, mock_secure_channel, nod
         result = node.call(host="localhost:50051", message="hello", cert_path="cert.pem")
     
     assert result == ("Echoing: hello", "2024-01-01T12:00:00")
-    mock_stub.EchoOnce.assert_called_once()
+    assert mock_stub.EchoOnce.call_count == 2
 
 def test_node_call_missing_cert(node):
     with patch("pathlib.Path.exists", return_value=False):
         result = node.call(host="localhost:50051", message="hello", cert_path="nonexistent.pem")
     
-    assert "Error: Certificate file not found" in result[0]
+    assert "Certificate file not found at nonexistent.pem" in result[0]
 
 @patch("grpc.secure_channel")
 @patch("pathlib.Path.exists")

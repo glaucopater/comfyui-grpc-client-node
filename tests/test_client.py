@@ -3,7 +3,7 @@ import grpc
 from pathlib import Path
 
 # Add the server directory to the path to import generated protobuf files
-server_dir = Path(__file__).parent / "server"
+server_dir = Path(__file__).parent.parent / "server"
 sys.path.append(str(server_dir))
 
 import echo_pb2
