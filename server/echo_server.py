@@ -1,3 +1,7 @@
+import argparse
+import os
+import time
+import threading
 import json
 from datetime import datetime
 from concurrent import futures
@@ -24,7 +28,60 @@ class EchoService(echo_pb2_grpc.EchoServicer):
 
 
 
+def monitor_parent(pid):
+    """Monitor the parent process and exit if it's no longer running."""
+    print(f"Server: Monitoring parent PID {pid}")
+    
+    if os.name == 'nt':
+        # Windows-specific robust monitoring using ctypes
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        STILL_ACTIVE = 259
+
+        # Open process handle
+        process_handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not process_handle:
+            print("Server: Could not open parent process handle. Shutting down...")
+            os._exit(0)
+
+        try:
+            while True:
+                exit_code = ctypes.c_ulong()
+                if not kernel32.GetExitCodeProcess(process_handle, ctypes.byref(exit_code)):
+                    print("Server: Failed to get parent exit code. Shutting down...")
+                    break
+                
+                if exit_code.value != STILL_ACTIVE:
+                    print("Server: Parent process terminated. Shutting down...")
+                    break
+                time.sleep(2)
+        finally:
+            kernel32.CloseHandle(process_handle)
+        os._exit(0)
+    else:
+        # Unix/Linux monitoring
+        while True:
+            try:
+                os.kill(pid, 0)
+            except OSError:
+                print("Server: Parent process terminated. Shutting down...")
+                os._exit(0)
+            time.sleep(2)
+
 def serve():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--parent-pid", type=int, help="PID of the parent process to monitor")
+    args = parser.parse_args()
+
+    if args.parent_pid:
+        monitor_thread = threading.Thread(
+            target=monitor_parent, 
+            args=(args.parent_pid,), 
+            daemon=True
+        )
+        monitor_thread.start()
+
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     echo_pb2_grpc.add_EchoServicer_to_server(EchoService(), server)
 
@@ -50,8 +107,8 @@ def serve():
         ((private_key, certificate_chain),)
     )
 
-    # Add secure port
-    server.add_secure_port("[::]:50051", server_credentials)
+    # Add secure port - use 0.0.0.0 for better IPv4 compatibility on Windows
+    server.add_secure_port("0.0.0.0:50051", server_credentials)
     
     print("Echo gRPC server listening on 0.0.0.0:50051 (secure)")
     server.start()
